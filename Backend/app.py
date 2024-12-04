@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import base64
 import numpy as np
@@ -9,11 +8,8 @@ from tensorflow.keras.models import load_model
 import mediapipe as mp
 import cv2
 
-# Verificar si el script se está ejecutando como un archivo .exe empaquetado por PyInstaller
-if getattr(sys, 'frozen', False):
-    model_path = os.path.join(sys._MEIPASS, 'modelo.h5')  # Ruta para el modelo cuando el archivo está empaquetado
-else:
-    model_path = os.path.join(os.getcwd(), 'modelo.h5')  # Ruta local cuando el script no está empaquetado
+# Ruta para el modelo
+model_path = os.path.join(os.getcwd(), 'modelo.h5')  # Ruta local cuando el script no está empaquetado
 
 # Inicializar Flask
 app = Flask(__name__)
@@ -34,10 +30,12 @@ hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7)
 class_names = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "a", "e", "i", "u", "o", "b", "c", "d", "f", "g", "h", 
                "l", "m", "n", "p", "r", "s", "t", "v", "w", "y", "k", "q", "x", "z", "te amo", "mucho", "yo"]
 
+# Ruta principal
 @app.route('/')
 def home():
     return render_template('index.html')  # Renderizar la página principal
 
+# Ruta de predicción
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.json
@@ -67,6 +65,8 @@ def predict():
 
     return jsonify({"predicted_class": class_label})
 
+# Iniciar el servidor Flask
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
