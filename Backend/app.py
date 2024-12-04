@@ -18,7 +18,7 @@ else:
     hand_landmark_path = 'mediapipe'  # Ruta local para mediapipe
 
 # Inicializar Flask
-app = Flask(_name_)
+app = Flask(__name__)
 
 # Intentar cargar el modelo de Keras y manejar el error si el formato es incorrecto
 try:
