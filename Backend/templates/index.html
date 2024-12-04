@@ -27,7 +27,7 @@
             font-style: normal;
         }
 
-        /* Header */
+       /* Header */
         header {
             background-color: #ffffff; /* Azul translúcido */
             padding: 20px;
@@ -35,6 +35,7 @@
             justify-content: space-between;  /* Espacio entre los elementos */
             align-items: center;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px; /* Añadido para darle espacio a los elementos debajo */
         }
 
         /* Logo */
@@ -90,7 +91,8 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-            height: 80vh; /* Ajustamos la altura para que no ocupe toda la pantalla */
+            height: 60vh; /* Ajustamos la altura para que no ocupe toda la pantalla */
+            margin-top: 20px; /* Separación desde el header */
         }
 
         .hero-content h1 {
@@ -98,14 +100,8 @@
             margin: 0;
             font-weight: 700;
             color: white;
-            font-family: 'Dancing Script'; 
-        }
-
-        .hero-content p {
-            font-size: 1.5rem;
-            margin-top: 10px;
-            margin-bottom: 30px;
-            color: white;
+            font-family: Dancing Script; 
+            margin-bottom: 20px; /* Espacio debajo del título */
         }
 
         /* Video Container */
@@ -124,9 +120,10 @@
 
         /* Texto de predicción */
         .prediction-text {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             margin-top: 20px;
             color: white;
+            margin-bottom: 20px; /* Añadir espacio debajo de la predicción */
         }
 
         /* Características */
@@ -200,7 +197,7 @@
 
             <!-- Texto de la predicción -->
             <div class="prediction-text">
-                <p id="prediction">Detectando la seña...</p>
+                <p>Detectando la seña...</p> <!-- Este texto puede actualizarse dinámicamente con JavaScript -->
             </div>
         </div>
     </section>
@@ -229,7 +226,6 @@
     <script>
         // Acceder a la cámara
         const videoElement = document.getElementById("video");
-        const predictionText = document.getElementById("prediction");
 
         // Configurar la cámara
         async function setupCamera() {
@@ -241,38 +237,8 @@
 
         // Iniciar la cámara cuando se carga la página
         window.onload = setupCamera;
-
-        // Enviar la imagen del video al servidor
-        async function sendFrameToServer() {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-
-            // Dibujar el frame actual en el canvas
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-            // Convertir la imagen a base64
-            const imageData = canvas.toDataURL('image/jpeg');
-
-            // Enviar la imagen al servidor para la predicción
-            const response = await fetch('/predict', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ image: imageData })
-            });
-
-            const data = await response.json();
-            if (data.predicted_class) {
-                predictionText.textContent = `Seña detectada: ${data.predicted_class}`;
-            }
-        }
-
-        // Enviar un frame cada 500ms
-        setInterval(sendFrameToServer, 500);
     </script>
 </body>
 </html>
+
 
