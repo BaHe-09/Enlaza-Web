@@ -9,7 +9,7 @@ import mediapipe as mp
 import cv2
 
 # Ruta para el modelo
-model_path = os.path.join(os.getcwd(), 'modelo.h5')  # Ruta local cuando el script no está empaquetado
+model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5') # Ruta local cuando el script no está empaquetado
 
 # Inicializar Flask
 app = Flask(__name__)
