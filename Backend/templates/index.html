@@ -35,7 +35,6 @@
             justify-content: space-between;  /* Espacio entre los elementos */
             align-items: center;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px; /* Añadido para darle espacio a los elementos debajo */
         }
 
         /* Logo */
@@ -91,8 +90,8 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-            height: 60vh; /* Ajustamos la altura para que no ocupe toda la pantalla */
-            margin-top: 20px; /* Separación desde el header */
+            height: 80vh; /* Ajustamos la altura para que no ocupe toda la pantalla */
+            margin-top: 50px; /* Espacio extra para mover los elementos hacia abajo */
         }
 
         .hero-content h1 {
@@ -101,14 +100,20 @@
             font-weight: 700;
             color: white;
             font-family: Dancing Script; 
-            margin-bottom: 20px; /* Espacio debajo del título */
+        }
+
+        .hero-content p {
+            font-size: 1.5rem;
+            margin-top: 10px;
+            margin-bottom: 30px;
+            color: white;
         }
 
         /* Video Container */
         .video-container {
             width: 90%;
             max-width: 800px;
-            margin: 10px auto;
+            margin: 30px auto 20px auto; /* Añadir margen superior */
             text-align: center;
         }
 
@@ -120,10 +125,9 @@
 
         /* Texto de predicción */
         .prediction-text {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             margin-top: 20px;
             color: white;
-            margin-bottom: 20px; /* Añadir espacio debajo de la predicción */
         }
 
         /* Características */
@@ -193,11 +197,6 @@
             <!-- Contenedor para el video -->
             <div class="video-container">
                 <video id="video" autoplay></video>
-            </div>
-
-            <!-- Texto de la predicción -->
-            <div class="prediction-text">
-                <p>Detectando la seña...</p> <!-- Este texto puede actualizarse dinámicamente con JavaScript -->
             </div>
         </div>
     </section>
