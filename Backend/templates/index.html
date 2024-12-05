@@ -5,164 +5,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tu Proyecto</title>
     <style>
-        /* Estilos generales */
         body {
-            margin: 0;
-            padding: 0;
             font-family: 'Arial', sans-serif;
-            color: #212529;
-            background: linear-gradient(135deg, #313d49, #2f547a, #212529); /* Degradado de fondo */
-            height: 100vh; /* Asegura que el fondo ocupe toda la altura */
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        /* Importar la fuente local */
-        @font-face {
-            font-family: 'Dancing Script';  /* Nombre que usaremos en CSS */
-            src: url('/static/fonts/DancingScript-Bold.ttf') format('truetype');  /* Ruta a la fuente */
-            font-weight: normal;
-            font-style: normal;
-        }
-
-       /* Header */
-        header {
-            background-color: #ffffff; /* Azul translúcido */
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;  /* Espacio entre los elementos */
-            align-items: center;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Logo */
-        .logo-container {
-            display: flex;
-            align-items: center;
-        }
-
-        .logo-container .logo {
-            width: 60px; /* Ajusta el tamaño de tu logo */
-            height: auto; /* Mantiene la relación de aspecto */
-            margin-right: 10px; /* Espacio entre el logo y el texto */
-        }
-
-        /* Texto de Enlaza con el tipo de letra Dancing Script */
-        .logo-container .logo-text {
-            font-family: 'Dancing Script', cursive; /* Usar la fuente local */
-            font-size: 2.5rem;
-            color: #2f547a;
-            font-weight: 700;
-        }
-
-        /* Menú */
-        nav ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: flex-end; /* Alineación a la derecha */
-        }
-
-        nav ul li {
-            margin-left: 25px;
-        }
-
-        nav ul li a {
-            color: #5ca7fa;
-            text-decoration: none;
-            font-size: 1.2rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: color 0.3s ease;
-        }
-
-        nav ul li a:hover {
-            color: #2f547a;
-        }
-
-        /* Hero Section */
-        .hero {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            height: 80vh; /* Ajustamos la altura para que no ocupe toda la pantalla */
-            margin-top: 20px; /* Espacio extra para mover los elementos hacia abajo */
-        }
-
-        .hero-content h1 {
-            font-size: 3rem;
-            margin: 0;
-            font-weight: 700;
+            background: linear-gradient(135deg, #313d49, #2f547a, #212529);
             color: white;
-            font-family: Dancing Script; 
+            height: 100vh;
+            margin: 0;
         }
 
-        .hero-content p {
-            font-size: 1.5rem;
-            margin-top: 10px;
-            margin-bottom: 30px;
-            color: white;
-        }
-
-        /* Video Container */
-        .video-container {
-            width: 90%;
-            max-width: 800px;
-            margin: 30px auto 20px auto; /* Añadir margen superior */
-            text-align: center;
-        }
-
-        /* Mostrar la cámara en vivo */
         #video {
             width: 100%;
-            height: auto;
+            max-width: 800px;
+            margin: 30px auto;
             border: 3px solid #5ca7fa;
             border-radius: 10px;
         }
 
-        /* Etiqueta para mostrar la predicción */
         #prediction {
-            font-size: 1.8rem;
-            color: white;
+            font-size: 2rem;
             font-weight: bold;
-            margin-top: 15px;
-            font-family: 'Dancing Script', cursive;
+            color: #5ca7fa;
+            text-align: center;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo-container">
-            <img src="/static/images/logo.png" alt="Logo" class="logo">
-            <span class="logo-text">Enlaza</span>
-        </div>
-        <nav>
-            <ul>
-                <li><a href="/">Inicio</a></li>
-            </ul>
-        </nav>
-    </header>
+    <h1 style="text-align: center;">Traductor de Lengua de Señas Mexicana</h1>
+    <video id="video" autoplay></video>
+    <div id="prediction">Esperando predicción...</div>
 
-    <div class="hero">
-        <div class="hero-content">
-            <h1>Traductor de Lengua de Señas Mexicana</h1>
-            <p>¡Aprende a comunicarte de manera inclusiva!</p>
-        </div>
-    </div>
+    <script>
+        // Acceder a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+            })
+            .catch(function(err) {
+                console.error("Error al acceder a la cámara: ", err);
+            });
 
-    <div class="video-container">
-        <h2>Señas en vivo</h2>
-        <video id="video" src="{{ url_for('video') }}" autoplay loop></video>
-        <div id="prediction">Esperando predicción...</div>
-    </div>
+        // Captura de frames cada 2 segundos
+        const video = document.getElementById('video');
+        const predictionElement = document.getElementById('prediction');
 
-    <footer>
-        <p>&copy; 2024 Enlaza. Todos los derechos reservados.</p>
-    </footer>
+        function captureFrame() {
+            // Crear un canvas para extraer el frame
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convertir el canvas a imagen en base64
+            const imageData = canvas.toDataURL('image/jpeg');
+
+            // Enviar la imagen al backend para la predicción
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: imageData.split(',')[1] }) // Solo la parte base64
+            })
+            .then(response => response.json())
+            .then(data => {
+                predictionElement.textContent = "Predicción: " + data.prediction;
+            })
+            .catch(error => {
+                console.error('Error al enviar la imagen al backend:', error);
+            });
+        }
+
+        // Configurar la captura de frames cada 2 segundos
+        setInterval(captureFrame, 2000);
+    </script>
 </body>
 </html>
