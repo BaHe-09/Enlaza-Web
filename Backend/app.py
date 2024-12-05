@@ -9,6 +9,9 @@ from tensorflow.keras.models import load_model
 import mediapipe as mp
 import cv2
 
+# Desactivar el uso de la GPU si no es necesario
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Deshabilitar el uso de la GPU
+
 # Ruta al modelo
 model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5')  # Ruta local cuando el script no está empaquetado
 
@@ -47,7 +50,7 @@ def generate_frames():
 
     while True:
         success, image = cap.read()
-        
+
         # Verificar si se obtuvo una imagen válida
         if not success or image is None:
             continue  # O terminar el ciclo si prefieres no seguir ejecutando
@@ -99,37 +102,44 @@ def generate_frames():
 def video():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-# Ruta para procesar la imagen y obtener la predicción
+# Ruta para la predicción
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.json
     if 'image' not in data:
         return jsonify({"error": "No image provided"}), 400
 
-    # Decodificar la imagen en base64
-    img_data = base64.b64decode(data['image'])
-    np_arr = np.frombuffer(img_data, np.uint8)
-    image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    try:
+        # Decodificar la imagen en base64
+        img_data = base64.b64decode(data['image'])
+        np_arr = np.frombuffer(img_data, np.uint8)
+        image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
-    # Convertir la imagen a RGB para MediaPipe
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    results = hands.process(image_rgb)
+        # Verificar que la imagen se ha cargado correctamente
+        if image is None:
+            return jsonify({"error": "Error al cargar la imagen."}), 500
 
-    class_label = ""  # Predicción de la seña
-    if results.multi_hand_landmarks:
-        for hand_landmarks in results.multi_hand_landmarks:
-            keypoints = []
-            for lm in hand_landmarks.landmark:
-                keypoints.extend([lm.x, lm.y, lm.z])
+        # Convertir la imagen a RGB para MediaPipe
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        results = hands.process(image_rgb)
 
-            keypoints = np.array(keypoints).reshape(1, -1)
-            prediction = model.predict(keypoints, verbose=0)
-            class_index = np.argmax(prediction)
-            class_label = class_names[class_index]
+        class_label = ""  # Predicción de la seña
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+                keypoints = []
+                for lm in hand_landmarks.landmark:
+                    keypoints.extend([lm.x, lm.y, lm.z])
 
-    return jsonify({"predicted_class": class_label})
+                keypoints = np.array(keypoints).reshape(1, -1)
+                prediction = model.predict(keypoints, verbose=0)
+                class_index = np.argmax(prediction)
+                class_label = class_names[class_index]
+
+        return jsonify({"predicted_class": class_label})
+
+    except Exception as e:
+        print(f"Error en la predicción: {e}")
+        return jsonify({"error": "Error al procesar la imagen."}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-
