@@ -198,7 +198,8 @@
             <div class="video-container">
                 <video id="video" autoplay></video>
             </div>
-            
+
+            <!-- Predicción -->
             <div class="prediction-text" id="prediction-result">
                 Esperando predicción...
             </div>
@@ -227,6 +228,21 @@
     </footer>
 
     <script>
+        // Función para enviar la imagen al backend
+        async function sendImageToBackend(imageData) {
+            const response = await fetch('https://enlaza-web-3.onrender.com/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageData })
+            });
+
+            const result = await response.json();
+            console.log('Resultado de la predicción:', result);
+            document.getElementById('prediction-result').textContent = result.predicted_class || "Error al obtener predicción.";
+        }
+
         // Acceder a la cámara
         const videoElement = document.getElementById("video");
 
@@ -236,6 +252,18 @@
                 video: { facingMode: "user" }  // Usar la cámara frontal
             });
             videoElement.srcObject = stream;
+
+            // Capturar imágenes y enviar al backend
+            setInterval(async () => {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+                context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+                const imageData = canvas.toDataURL('image/jpeg');  // Convertir a base64
+                await sendImageToBackend(imageData);  // Enviar imagen al backend para predicción
+            }, 1000);  // Enviar cada 1 segundo
         }
 
         // Iniciar la cámara cuando se carga la página
