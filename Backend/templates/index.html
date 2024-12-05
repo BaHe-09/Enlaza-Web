@@ -198,8 +198,10 @@
             <div class="video-container">
                 <video id="video" autoplay></video>
             </div>
-            <!-- Contenedor para mostrar la predicción -->
-            <div class="prediction-text" id="prediction-text">Esperando predicción...</div>
+            
+            <div class="prediction-text" id="prediction-result">
+                Esperando predicción...
+            </div>
         </div>
     </section>
 
@@ -236,45 +238,8 @@
             videoElement.srcObject = stream;
         }
 
-        // Enviar la imagen al backend para la predicción
-        async function getPrediction() {
-            try {
-                const canvas = document.createElement("canvas");
-                const ctx = canvas.getContext("2d");
-                canvas.width = videoElement.videoWidth;
-                canvas.height = videoElement.videoHeight;
-
-                // Dibujar el cuadro del video en el canvas
-                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-                // Convertir la imagen en el canvas a base64
-                const imageData = canvas.toDataURL("image/jpeg");
-
-                // Enviar la imagen al backend para la predicción
-                const response = await fetch("/predict", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ image: imageData }),
-                });
-
-                const result = await response.json();
-
-                if (result.predicted_class) {
-                    document.getElementById("prediction-text").textContent = "Predicción: " + result.predicted_class;
-                }
-            } catch (error) {
-                console.error("Error al obtener la predicción:", error);
-                document.getElementById("prediction-text").textContent = "Error al obtener la predicción";
-            }
-        }
-
-        // Iniciar la cámara y hacer predicciones
-        window.onload = async () => {
-            await setupCamera();
-            setInterval(getPrediction, 5000); // Hacer predicciones cada 1 segundo
-        };
+        // Iniciar la cámara cuando se carga la página
+        window.onload = setupCamera;
     </script>
 </body>
 </html>
