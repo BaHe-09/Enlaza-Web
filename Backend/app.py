@@ -1,55 +1,100 @@
-import cv2
+import os
+from flask import Flask, jsonify, render_template, request
+from tensorflow.keras.models import load_model
 import numpy as np
 import mediapipe as mp
-from flask import Flask, jsonify, request
-from tensorflow.keras.models import load_model
-import tensorflow as tf
-import json
 
 app = Flask(__name__)
 
-# Cargar el modelo Keras previamente entrenado
-model= os.path.join(os.getcwd(), 'Backend', 'modelo.h5')
+# Cargar el modelo al iniciar la aplicación
+model = load_model('Backend/modelo.h5')  # Ajusta la ruta si es necesario
 
 # Configuración de MediaPipe
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-@app.route('/')
-def home():
-    return "Servidor Funcionando"
+# Definir las clases del modelo (ajusta esto según las clases que hayas utilizado al entrenar el modelo)
+class_names = ['Clase 1', 'Clase 2', 'Clase 3', 'Clase 4']  # Cambia esto según tus clases
 
+# Ruta principal que sirve la página de inicio
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+# Ruta para procesar el video y predecir los signos
+@app.route('/video')
+def video():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# Función que genera los frames del video
+def generate_frames():
+    import cv2
+
+    # Configurar la cámara (Ajusta el índice si es necesario)
+    cap = cv2.VideoCapture(0)
+
+    while True:
+        success, frame = cap.read()
+        if not success:
+            break
+
+        # Convertir el frame a RGB
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # Procesar el frame con MediaPipe
+        results = hands.process(rgb_frame)
+
+        # Si hay puntos clave detectados
+        if results.multi_hand_landmarks:
+            # Extraer los puntos clave de la mano
+            landmarks = results.multi_hand_landmarks[0]
+            points = np.array([[lm.x, lm.y, lm.z] for lm in landmarks.landmark])
+
+            # Preprocesar los puntos clave para la predicción (ajusta según el formato que requiera tu modelo)
+            input_data = preprocess_points(points)  # Función de preprocesamiento
+            input_data = np.expand_dims(input_data, axis=0)  # Ajuste de dimensiones para el modelo
+
+            # Hacer la predicción
+            prediction = model.predict(input_data)
+            predicted_class = np.argmax(prediction, axis=1)[0]
+            predicted_label = class_names[predicted_class]
+
+            # Enviar la predicción al frontend
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + cv2.imencode('.jpg', frame)[1].tobytes() + b'\r\n\r\n')
+
+        # Finalizar captura de video
+    cap.release()
+
+# Función para preprocesar los puntos de la mano antes de la predicción (ajusta según el modelo)
+def preprocess_points(points):
+    # Aquí puedes aplicar cualquier tipo de preprocesamiento a los puntos si es necesario.
+    # Este es solo un ejemplo que normaliza los puntos.
+    points = np.array(points)
+    points = points.flatten()  # Aplana el arreglo de puntos
+    return points
+
+# Ruta para la predicción usando los puntos clave enviados desde el frontend
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json()
-    points = data.get('points')  # Lista de puntos clave (landmarks)
+
+    if 'points' in data:
+        points = np.array(data['points'])
+        input_data = preprocess_points(points)  # Preprocesar puntos
+        input_data = np.expand_dims(input_data, axis=0)  # Ajuste de dimensiones para el modelo
+
+        # Realizar la predicción
+        prediction = model.predict(input_data)
+        predicted_class = np.argmax(prediction, axis=1)[0]
+        predicted_label = class_names[predicted_class]
+
+        # Enviar la predicción como respuesta
+        return jsonify({'prediction': predicted_label})
     
-    if not points:
-        return jsonify({'error': 'No se recibieron puntos.'}), 400
+    return jsonify({'error': 'No se recibieron puntos clave'}), 400
 
-    # Convertir los puntos a un array numpy (deben estar en formato adecuado para el modelo)
-    input_data = np.array(points).flatten()
-    
-    # Normalizar o hacer cualquier transformación necesaria para tu modelo
-    input_data = np.expand_dims(input_data, axis=0)
-
-    # Realizar la predicción
-    prediction = model.predict(input_data)
-    predicted_class = np.argmax(prediction, axis=1)  # Ajusta según tu modelo
-
-    # Devolver la predicción como texto (ajusta esto dependiendo de tu modelo)
-    prediction_label = f'Clase {predicted_class[0]}'
-
-    return jsonify({'prediction': prediction_label})
-
-@app.route('/video', methods=['GET'])
-def video():
-    try:
-        return jsonify({"message": "Video endpoint working."})
-    except Exception as e:
-        return jsonify({"error": "No se pudo acceder a la cámara."}), 500
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
-
+# Ejecutar la aplicación
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
 
