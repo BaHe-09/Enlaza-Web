@@ -12,7 +12,7 @@ import io
 app = Flask(__name__)
 
 # Cargar el modelo de Keras
-model_path = os.path.join(os.getcwd(), 'modelo.h5')
+model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5')
 try:
     model = load_model(model_path, compile=False)
     print("Modelo cargado correctamente.")
