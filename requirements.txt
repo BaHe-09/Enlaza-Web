@@ -5,4 +5,4 @@ mediapipe
 pillow
 gunicorn
 numpy
-
+flask-socketio
