@@ -60,6 +60,13 @@ def generate_frames():
         class_label = ""  # Predicción de la seña
         if results.multi_hand_landmarks:
             for hand_landmarks in results.multi_hand_landmarks:
+                # Dibujar los puntos de la mano
+                for lm in hand_landmarks.landmark:
+                    h, w, _ = image.shape
+                    cx, cy = int(lm.x * w), int(lm.y * h)
+                    cv2.circle(image, (cx, cy), 5, (255, 0, 0), -1)
+
+                # Extraer las coordenadas de los puntos de referencia
                 keypoints = []
                 for lm in hand_landmarks.landmark:
                     keypoints.extend([lm.x, lm.y, lm.z])
