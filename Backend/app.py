@@ -1,11 +1,8 @@
 import os
 import numpy as np
 import tensorflow as tf
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
 from tensorflow.keras.models import load_model
-import base64
-from io import BytesIO
-from PIL import Image
 
 # Ruta al modelo
 model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5')
@@ -16,32 +13,30 @@ app = Flask(__name__)
 # Cargar el modelo de Keras
 model = load_model(model_path, compile=False)
 
-# Mapeo manual de las clases
+# Mapeo manual de las clases (de acuerdo a tu entrenamiento)
 class_names = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "a", "e", "i", "u", "o", "b", "c", "d", "f", "g", "h", 
                "l", "m", "n", "p", "r", "s", "t", "v", "w", "y", "k", "q", "x", "z", "te amo", "mucho", "yo"]
 
 @app.route('/')
 def home():
-    return render_template('index.html')  # Renderizar la página principal
+    return "Servidor funcionando"
 
-# Ruta para recibir la imagen y hacer la predicción
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.get_json()  # Recibir la imagen en base64
-    
-    # Decodificar la imagen base64
-    img_data = base64.b64decode(data['image'])
-    img = Image.open(BytesIO(img_data))
+    data = request.get_json()
 
-    # Preprocesar la imagen antes de pasarla al modelo
-    img = img.resize((224, 224))  # Ajusta el tamaño según el tamaño de entrada de tu modelo
-    img_array = np.array(img) / 255.0  # Normalización si es necesario
+    # Obtener los puntos clave de la mano
+    points = np.array(data['points'])
 
-    # Convertir la imagen a un formato compatible con el modelo (reshape)
-    img_array = img_array.reshape(1, -1)
+    # Asegurarse de que los puntos tengan la forma adecuada para el modelo
+    # Si el modelo espera un vector plano, puedes aplanar los puntos
+    points = points.flatten()
 
-    # Hacer la predicción
-    prediction = model.predict(img_array)
+    # Normalizar los puntos (si es necesario según el entrenamiento del modelo)
+    points = points / np.max(points)
+
+    # Hacer la predicción con el modelo
+    prediction = model.predict(np.expand_dims(points, axis=0))
     class_index = np.argmax(prediction)
     predicted_class = class_names[class_index]
 
@@ -50,3 +45,4 @@ def predict():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
