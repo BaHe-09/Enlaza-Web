@@ -47,7 +47,7 @@ def generate_frames():
 
     while True:
         success, image = cap.read()
-        
+
         # Verificar si se obtuvo una imagen válida
         if not success or image is None:
             continue  # O terminar el ciclo si prefieres no seguir ejecutando
@@ -99,7 +99,11 @@ def generate_frames():
 def video():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# Ruta para obtener la predicción y mostrarla
+@app.route('/predict', methods=['GET'])
+def predict():
+    # Devolver la última predicción como JSON
+    return jsonify({"predicted_class": class_label})
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-
