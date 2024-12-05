@@ -84,7 +84,7 @@
                 const points = landmarks.map(point => [point.x, point.y, point.z]);
 
                 // Enviar los puntos clave al backend
-                fetch('/predict', {
+                fetch('https://enlaza-web-4.onrender.com/predict', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
