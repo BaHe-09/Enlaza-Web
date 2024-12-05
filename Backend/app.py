@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 import base64
 import numpy as np
 import tensorflow as tf
@@ -105,11 +104,11 @@ def video():
 # Ruta para la predicción
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.json
-    if 'image' not in data:
-        return jsonify({"error": "No image provided"}), 400
-
     try:
+        data = request.json
+        if 'image' not in data:
+            return jsonify({"error": "No image provided"}), 400
+
         # Decodificar la imagen en base64
         img_data = base64.b64decode(data['image'])
         np_arr = np.frombuffer(img_data, np.uint8)
@@ -143,3 +142,4 @@ def predict():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
