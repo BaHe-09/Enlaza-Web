@@ -27,7 +27,7 @@
             font-style: normal;
         }
 
-       /* Header */
+        /* Header */
         header {
             background-color: #ffffff; /* Azul translúcido */
             padding: 20px;
@@ -198,6 +198,9 @@
             <div class="video-container">
                 <video id="video" autoplay></video>
             </div>
+
+            <!-- Texto de predicción -->
+            <div class="prediction-text" id="predictionText">Detectando...</div>
         </div>
     </section>
 
@@ -225,6 +228,7 @@
     <script>
         // Acceder a la cámara
         const videoElement = document.getElementById("video");
+        const predictionText = document.getElementById("predictionText");
 
         // Configurar la cámara
         async function setupCamera() {
@@ -234,10 +238,19 @@
             videoElement.srcObject = stream;
         }
 
-        // Iniciar la cámara cuando se carga la página
-        window.onload = setupCamera;
+        // Función para actualizar la predicción en la pantalla
+        async function fetchPrediction() {
+            const response = await fetch('/predict');
+            const data = await response.json();
+            predictionText.innerText = `Seña detectada: ${data.predicted_class}`;
+        }
+
+        // Iniciar la cámara y la predicción cuando se carga la página
+        window.onload = async () => {
+            setupCamera();
+            setInterval(fetchPrediction, 1000);  // Actualiza la predicción cada segundo
+        };
     </script>
 </body>
 </html>
-
 
