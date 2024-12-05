@@ -1,102 +1,105 @@
 import os
-from flask import Flask, jsonify, render_template, request
-from tensorflow.keras.models import load_model
+import sys
+import time
+import base64
 import numpy as np
+import tensorflow as tf
+from flask import Flask, request, jsonify, render_template, Response
+from tensorflow.keras.models import load_model
 import mediapipe as mp
+import cv2
 
+# Ruta al modelo
+model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5')  # Ruta local cuando el script no está empaquetado
+
+# Inicializar Flask
 app = Flask(__name__)
 
-# Cargar el modelo al iniciar la aplicación
-model = load_model('Backend/modelo.h5')  # Ajusta la ruta si es necesario
+# Intentar cargar el modelo de Keras y manejar el error si el formato es incorrecto
+try:
+    model = load_model(model_path, compile=False)
+except ValueError as e:
+    sys.exit(1)  # Terminar el script si el modelo no se puede cargar
 
-# Configuración de MediaPipe
+# Inicializar MediaPipe para la detección de manos
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7)
 
-# Definir las clases del modelo (ajusta esto según las clases que hayas utilizado al entrenar el modelo)
+# Mapeo manual de las clases
 class_names = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "a", "e", "i", "u", "o", "b", "c", "d", "f", "g", "h", 
                "l", "m", "n", "p", "r", "s", "t", "v", "w", "y", "k", "q", "x", "z", "te amo", "mucho", "yo"]
- # Cambia esto según tus clases
 
-# Ruta principal que sirve la página de inicio
+# Ruta principal de la aplicación web
 @app.route('/')
-def index():
-    return render_template('index.html')
+def home():
+    return render_template('index.html')  # Renderizar la página principal
 
-# Ruta para procesar el video y predecir los signos
+# Función para capturar el video y procesarlo
+def generate_frames():
+    global current_word, last_letter, words_history, last_detection_time  # Hacer que las variables sean globales
+
+    # Abrir la cámara
+    cap = cv2.VideoCapture(0)  # Captura de la cámara local
+
+    # Verificar si la cámara se abrió correctamente
+    if not cap.isOpened():
+        return jsonify({"error": "No se pudo acceder a la cámara."}), 500
+
+    while True:
+        success, image = cap.read()
+        
+        # Verificar si se obtuvo una imagen válida
+        if not success or image is None:
+            continue  # O terminar el ciclo si prefieres no seguir ejecutando
+
+        # Convertir la imagen a RGB para MediaPipe
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # Procesar la imagen con MediaPipe
+        results = hands.process(image_rgb)
+
+        class_label = ""  # Predicción de la seña
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+                keypoints = []
+                for lm in hand_landmarks.landmark:
+                    keypoints.extend([lm.x, lm.y, lm.z])
+
+                keypoints = np.array(keypoints).reshape(1, -1)
+                prediction = model.predict(keypoints, verbose=0)
+                class_index = np.argmax(prediction)
+                class_label = class_names[class_index]
+
+        # Mostrar las palabras formadas
+        text_word = " ".join(words_history) + current_word
+        image_height, image_width, _ = image.shape
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1
+        font_thickness = 2
+
+        # Mostrar la palabra formada
+        (text_width, text_height), _ = cv2.getTextSize(text_word, font, font_scale, font_thickness)
+        text_x = (image_width - text_width) // 2  # Posición centrada en la parte inferior
+        text_y = image_height - 50  # Parte inferior
+
+        # Añadir contorno y sombra al texto de la palabra
+        cv2.putText(image, text_word, (text_x + 2, text_y + 2), font, font_scale, (0, 0, 0), font_thickness + 2, lineType=cv2.LINE_AA)
+        cv2.putText(image, text_word, (text_x, text_y), font, font_scale, (0, 255, 0), font_thickness, lineType=cv2.LINE_AA)
+
+        # Convertir la imagen a formato JPEG para enviarla como un frame
+        ret, buffer = cv2.imencode('.jpg', image)
+        frame = buffer.tobytes()
+
+        # Enviar el frame como un flujo de bytes
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+
+# Ruta para mostrar el video en el navegador (streaming)
 @app.route('/video')
 def video():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-# Función que genera los frames del video
-def generate_frames():
-    import cv2
-
-    # Configurar la cámara (Ajusta el índice si es necesario)
-    cap = cv2.VideoCapture(0)
-
-    while True:
-        success, frame = cap.read()
-        if not success:
-            break
-
-        # Convertir el frame a RGB
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        # Procesar el frame con MediaPipe
-        results = hands.process(rgb_frame)
-
-        # Si hay puntos clave detectados
-        if results.multi_hand_landmarks:
-            # Extraer los puntos clave de la mano
-            landmarks = results.multi_hand_landmarks[0]
-            points = np.array([[lm.x, lm.y, lm.z] for lm in landmarks.landmark])
-
-            # Preprocesar los puntos clave para la predicción (ajusta según el formato que requiera tu modelo)
-            input_data = preprocess_points(points)  # Función de preprocesamiento
-            input_data = np.expand_dims(input_data, axis=0)  # Ajuste de dimensiones para el modelo
-
-            # Hacer la predicción
-            prediction = model.predict(input_data)
-            predicted_class = np.argmax(prediction, axis=1)[0]
-            predicted_label = class_names[predicted_class]
-
-            # Enviar la predicción al frontend
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + cv2.imencode('.jpg', frame)[1].tobytes() + b'\r\n\r\n')
-
-        # Finalizar captura de video
-    cap.release()
-
-# Función para preprocesar los puntos de la mano antes de la predicción (ajusta según el modelo)
-def preprocess_points(points):
-    # Aquí puedes aplicar cualquier tipo de preprocesamiento a los puntos si es necesario.
-    # Este es solo un ejemplo que normaliza los puntos.
-    points = np.array(points)
-    points = points.flatten()  # Aplana el arreglo de puntos
-    return points
-
-# Ruta para la predicción usando los puntos clave enviados desde el frontend
-@app.route('/predict', methods=['POST'])
-def predict():
-    data = request.get_json()
-
-    if 'points' in data:
-        points = np.array(data['points'])
-        input_data = preprocess_points(points)  # Preprocesar puntos
-        input_data = np.expand_dims(input_data, axis=0)  # Ajuste de dimensiones para el modelo
-
-        # Realizar la predicción
-        prediction = model.predict(input_data)
-        predicted_class = np.argmax(prediction, axis=1)[0]
-        predicted_label = class_names[predicted_class]
-
-        # Enviar la predicción como respuesta
-        return jsonify({'prediction': predicted_label})
-    
-    return jsonify({'error': 'No se recibieron puntos clave'}), 400
-
-# Ejecutar la aplicación
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
 
