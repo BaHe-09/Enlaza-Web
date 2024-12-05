@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import base64
 import numpy as np
 import tensorflow as tf
@@ -7,9 +8,6 @@ from flask import Flask, request, jsonify, render_template, Response
 from tensorflow.keras.models import load_model
 import mediapipe as mp
 import cv2
-
-# Desactivar el uso de la GPU si no es necesario
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Deshabilitar el uso de la GPU
 
 # Ruta al modelo
 model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5')  # Ruta local cuando el script no está empaquetado
@@ -49,7 +47,7 @@ def generate_frames():
 
     while True:
         success, image = cap.read()
-
+        
         # Verificar si se obtuvo una imagen válida
         if not success or image is None:
             continue  # O terminar el ciclo si prefieres no seguir ejecutando
@@ -114,10 +112,6 @@ def predict():
         np_arr = np.frombuffer(img_data, np.uint8)
         image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
-        # Verificar que la imagen se ha cargado correctamente
-        if image is None:
-            return jsonify({"error": "Error al cargar la imagen."}), 500
-
         # Convertir la imagen a RGB para MediaPipe
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         results = hands.process(image_rgb)
@@ -142,4 +136,5 @@ def predict():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
