@@ -8,12 +8,14 @@ from flask import Flask, request, jsonify, render_template, Response
 from tensorflow.keras.models import load_model
 import mediapipe as mp
 import cv2
+from flask_socketio import SocketIO
 
 # Ruta al modelo
 model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5')  # Ruta local cuando el script no está empaquetado
 
 # Inicializar Flask
 app = Flask(__name__)
+socketio = SocketIO(app)  # Inicializamos SocketIO
 
 # Intentar cargar el modelo de Keras y manejar el error si el formato es incorrecto
 try:
@@ -70,21 +72,8 @@ def generate_frames():
                 class_index = np.argmax(prediction)
                 class_label = class_names[class_index]
 
-        # Mostrar las palabras formadas
-        text_word = " ".join(words_history) + current_word
-        image_height, image_width, _ = image.shape
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1
-        font_thickness = 2
-
-        # Mostrar la palabra formada
-        (text_width, text_height), _ = cv2.getTextSize(text_word, font, font_scale, font_thickness)
-        text_x = (image_width - text_width) // 2  # Posición centrada en la parte inferior
-        text_y = image_height - 50  # Parte inferior
-
-        # Añadir contorno y sombra al texto de la palabra
-        cv2.putText(image, text_word, (text_x + 2, text_y + 2), font, font_scale, (0, 0, 0), font_thickness + 2, lineType=cv2.LINE_AA)
-        cv2.putText(image, text_word, (text_x, text_y), font, font_scale, (0, 255, 0), font_thickness, lineType=cv2.LINE_AA)
+        # Emitir la predicción a través de WebSocket
+        socketio.emit('prediction', {'class_label': class_label})
 
         # Convertir la imagen a formato JPEG para enviarla como un frame
         ret, buffer = cv2.imencode('.jpg', image)
@@ -99,6 +88,12 @@ def generate_frames():
 def video():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# WebSocket para recibir las predicciones en el frontend
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+
 
