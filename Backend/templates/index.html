@@ -27,7 +27,7 @@
             font-style: normal;
         }
 
-        /* Header */
+       /* Header */
         header {
             background-color: #ffffff; /* Azul translúcido */
             padding: 20px;
@@ -125,9 +125,10 @@
 
         /* Texto de predicción */
         .prediction-text {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             margin-top: 20px;
             color: white;
+            text-align: center;
         }
 
         /* Características */
@@ -199,8 +200,10 @@
                 <video id="video" autoplay></video>
             </div>
 
-            <!-- Texto de predicción -->
-            <div class="prediction-text" id="predictionText">Detectando...</div>
+            <!-- Texto de la predicción -->
+            <div class="prediction-text">
+                <p id="predicted-class">Esperando predicción...</p>
+            </div>
         </div>
     </section>
 
@@ -228,7 +231,6 @@
     <script>
         // Acceder a la cámara
         const videoElement = document.getElementById("video");
-        const predictionText = document.getElementById("predictionText");
 
         // Configurar la cámara
         async function setupCamera() {
@@ -238,19 +240,34 @@
             videoElement.srcObject = stream;
         }
 
-        // Función para actualizar la predicción en la pantalla
-        async function fetchPrediction() {
-            const response = await fetch('/predict');
+        // Iniciar la cámara cuando se carga la página
+        window.onload = setupCamera;
+
+        // Enviar la imagen y obtener la predicción desde el servidor
+        async function getPrediction() {
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL("image/jpeg");
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageData }),
+            });
+
             const data = await response.json();
-            predictionText.innerText = `Seña detectada: ${data.predicted_class}`;
+            const predictedClass = data.predicted_class || "No se detectó ninguna seña.";
+            document.getElementById("predicted-class").textContent = `Predicción: ${predictedClass}`;
         }
 
-        // Iniciar la cámara y la predicción cuando se carga la página
-        window.onload = async () => {
-            setupCamera();
-            setInterval(fetchPrediction, 1000);  // Actualiza la predicción cada segundo
-        };
+        // Obtener la predicción cada segundo
+        setInterval(getPrediction, 1000);
     </script>
 </body>
 </html>
+
 
