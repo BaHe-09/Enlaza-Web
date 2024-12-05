@@ -35,9 +35,16 @@
     <video id="video" autoplay></video>
     <div id="prediction">Esperando predicción...</div>
 
+    <!-- Cargar MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.3.162/hands.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.162/camera_utils.js"></script>
+
     <script>
+        // Asegúrate de que MediaPipe se haya cargado antes de intentar usarlo
+        if (typeof Hands === 'undefined') {
+            console.error('MediaPipe Hands no se cargó correctamente.');
+        }
+
         // Acceder a la cámara
         const videoElement = document.getElementById('video');
 
@@ -53,6 +60,7 @@
         const hands = new Hands({
             locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.3.162/${file}`
         });
+
         hands.setOptions({
             maxNumHands: 1,
             modelComplexity: 1,
@@ -108,4 +116,5 @@
     </script>
 </body>
 </html>
+
 
