@@ -35,10 +35,9 @@
     <video id="video" autoplay></video>
     <div id="prediction">Esperando predicción...</div>
 
-    <!-- Cargar MediaPipe con versión estable -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.3.162/hands.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.162/camera_utils.js"></script>
-
+    <!-- Cargar MediaPipe con la versión correcta -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
 
     <script>
         // Verificar si Hands está correctamente cargado
@@ -59,7 +58,7 @@
 
         // Configurar MediaPipe Hands
         const hands = new Hands({
-            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.162/${file}`
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
         });
 
         hands.setOptions({
@@ -89,7 +88,7 @@
 
         // Callback de MediaPipe para procesar los resultados
         hands.onResults((results) => {
-            if (results.multiHandLandmarks.length > 0) {
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 // Extraer los puntos clave de la mano
                 const landmarks = results.multiHandLandmarks[0];
                 const points = landmarks.map(point => [point.x, point.y, point.z]);
