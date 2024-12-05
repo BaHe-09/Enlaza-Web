@@ -14,7 +14,9 @@ mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
 # Definir las clases del modelo (ajusta esto según las clases que hayas utilizado al entrenar el modelo)
-class_names = ['Clase 1', 'Clase 2', 'Clase 3', 'Clase 4']  # Cambia esto según tus clases
+class_names = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "a", "e", "i", "u", "o", "b", "c", "d", "f", "g", "h", 
+               "l", "m", "n", "p", "r", "s", "t", "v", "w", "y", "k", "q", "x", "z", "te amo", "mucho", "yo"]
+ # Cambia esto según tus clases
 
 # Ruta principal que sirve la página de inicio
 @app.route('/')
