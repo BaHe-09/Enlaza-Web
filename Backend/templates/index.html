@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tu Proyecto</title>
+    <title>Traductor LSM</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -35,51 +35,74 @@
     <video id="video" autoplay></video>
     <div id="prediction">Esperando predicción...</div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
     <script>
         // Acceder a la cámara
-        navigator.mediaDevices.getUserMedia({ video: true })
+        const videoElement = document.getElementById('video');
+
+        navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
             .then(function(stream) {
-                const video = document.getElementById('video');
-                video.srcObject = stream;
+                videoElement.srcObject = stream;
             })
             .catch(function(err) {
                 console.error("Error al acceder a la cámara: ", err);
             });
 
-        // Captura de frames cada 2 segundos
-        const video = document.getElementById('video');
-        const predictionElement = document.getElementById('prediction');
+        // Configurar MediaPipe Hands
+        const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
 
-        function captureFrame() {
-            // Crear un canvas para extraer el frame
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Canvas para dibujar los puntos clave (opcional, solo para visualización)
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        document.body.appendChild(canvas);
+        canvas.width = 640;
+        canvas.height = 480;
 
-            // Convertir el canvas a imagen en base64
-            const imageData = canvas.toDataURL('image/jpeg');
+        // Función para procesar el video y enviar los puntos clave al backend
+        function processFrame() {
+            // Dibujar el video en el canvas
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
-            // Enviar la imagen al backend para la predicción
-            fetch('/predict', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ image: imageData.split(',')[1] }) // Solo la parte base64
-            })
-            .then(response => response.json())
-            .then(data => {
-                predictionElement.textContent = "Predicción: " + data.prediction;
-            })
-            .catch(error => {
-                console.error('Error al enviar la imagen al backend:', error);
-            });
+            // Detectar los puntos clave de la mano
+            hands.send({image: canvas});
+
+            requestAnimationFrame(processFrame);
         }
 
-        // Configurar la captura de frames cada 2 segundos
-        setInterval(captureFrame, 2000);
+        // Callback de MediaPipe para procesar los resultados
+        hands.onResults((results) => {
+            if (results.multiHandLandmarks.length > 0) {
+                // Extraer los puntos clave de la mano
+                const landmarks = results.multiHandLandmarks[0];
+                const points = landmarks.map(point => [point.x, point.y, point.z]);
+
+                // Enviar los puntos clave al backend
+                fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ points: points })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('prediction').textContent = "Predicción: " + data.prediction;
+                })
+                .catch(error => {
+                    console.error('Error al enviar los puntos al backend:', error);
+                });
+            }
+        });
+
+        // Iniciar el procesamiento de los frames del video
+        processFrame();
     </script>
 </body>
 </html>
