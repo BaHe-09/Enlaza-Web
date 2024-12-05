@@ -198,9 +198,8 @@
             <div class="video-container">
                 <video id="video" autoplay></video>
             </div>
-
-            <!-- Texto de predicción -->
-            <div class="prediction-text" id="predicted-class">Esperando predicción...</div>
+            <!-- Contenedor para mostrar la predicción -->
+            <div class="prediction-text" id="prediction-text">Esperando predicción...</div>
         </div>
     </section>
 
@@ -237,37 +236,45 @@
             videoElement.srcObject = stream;
         }
 
-        // Función para enviar la imagen al servidor
-        async function sendImageToBackend() {
-            const canvas = document.createElement("canvas");
-            const context = canvas.getContext("2d");
-
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-            const imageData = canvas.toDataURL("image/jpeg");
-
+        // Enviar la imagen al backend para la predicción
+        async function getPrediction() {
             try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+
+                // Dibujar el cuadro del video en el canvas
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+                // Convertir la imagen en el canvas a base64
+                const imageData = canvas.toDataURL("image/jpeg");
+
+                // Enviar la imagen al backend para la predicción
+                const response = await fetch("/predict", {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
+                        "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ image: imageData })
+                    body: JSON.stringify({ image: imageData }),
                 });
 
-                const data = await response.json();
-                const predictedClass = data.predicted_class || "No se detectó ninguna seña";
-                document.getElementById("predicted-class").textContent = `Predicción: ${predictedClass}`;
+                const result = await response.json();
+
+                if (result.predicted_class) {
+                    document.getElementById("prediction-text").textContent = "Predicción: " + result.predicted_class;
+                }
             } catch (error) {
-                console.error("Error al enviar la imagen:", error);
+                console.error("Error al obtener la predicción:", error);
+                document.getElementById("prediction-text").textContent = "Error al obtener la predicción";
             }
         }
 
-        // Iniciar la cámara cuando se carga la página
-        window.onload = setupCamera;
-        setInterval(sendImageToBackend, 1000);
+        // Iniciar la cámara y hacer predicciones
+        window.onload = async () => {
+            await setupCamera();
+            setInterval(getPrediction, 1000); // Hacer predicciones cada 1 segundo
+        };
     </script>
 </body>
 </html>
