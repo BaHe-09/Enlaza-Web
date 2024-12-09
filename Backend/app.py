@@ -1,9 +1,7 @@
 import os
 import sys
 import time
-import base64
 import numpy as np
-import tensorflow as tf
 from flask import Flask, request, jsonify, render_template, Response
 from tensorflow.keras.models import load_model
 import mediapipe as mp
@@ -99,7 +97,17 @@ def generate_frames():
 def video():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# Ruta para realizar la predicción a partir de las coordenadas
+@app.route('/predict', methods=['POST'])
+def predict():
+    data = request.json  # Recibir los datos en formato JSON
+    
+    keypoints = np.array(data['keypoints']).reshape(1, -1)  # Obtener las coordenadas de las manos
+    prediction = model.predict(keypoints, verbose=0)
+    class_index = np.argmax(prediction)  # Obtener la clase con mayor probabilidad
+    class_label = class_names[class_index]  # Obtener la etiqueta correspondiente
+
+    return jsonify({'prediction': class_label})  # Devolver la predicción en formato JSON
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-
