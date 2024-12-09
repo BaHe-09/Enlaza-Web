@@ -34,9 +34,6 @@ def home():
 
 # Función para capturar el video y procesarlo
 def generate_frames():
-    global current_word, last_letter, words_history, last_detection_time  # Hacer que las variables sean globales
-
-    # Abrir la cámara
     cap = cv2.VideoCapture(0)  # Captura de la cámara local
 
     # Verificar si la cámara se abrió correctamente
@@ -45,10 +42,9 @@ def generate_frames():
 
     while True:
         success, image = cap.read()
-        
-        # Verificar si se obtuvo una imagen válida
+
         if not success or image is None:
-            continue  # O terminar el ciclo si prefieres no seguir ejecutando
+            continue
 
         # Convertir la imagen a RGB para MediaPipe
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -69,7 +65,7 @@ def generate_frames():
                 class_label = class_names[class_index]
 
         # Mostrar las palabras formadas
-        text_word = " ".join(words_history) + current_word
+        text_word = " ".join([class_label])  # Aquí solo mostramos la predicción actual
         image_height, image_width, _ = image.shape
         font = cv2.FONT_HERSHEY_SIMPLEX
         font_scale = 1
@@ -102,7 +98,14 @@ def video():
 def predict():
     data = request.json  # Recibir los datos en formato JSON
     
-    keypoints = np.array(data['keypoints']).reshape(1, -1)  # Obtener las coordenadas de las manos
+    # Obtener las coordenadas de las manos
+    keypoints = np.array(data['keypoints']).reshape(1, -1)
+
+    # Verificar si las coordenadas tienen la forma esperada (63 valores para 21 puntos con 3 coordenadas cada uno)
+    if keypoints.shape[1] != 63:
+        return jsonify({'error': 'Las coordenadas deben tener una longitud de 63.'}), 400
+
+    # Realizar la predicción
     prediction = model.predict(keypoints, verbose=0)
     class_index = np.argmax(prediction)  # Obtener la clase con mayor probabilidad
     class_label = class_names[class_index]  # Obtener la etiqueta correspondiente
