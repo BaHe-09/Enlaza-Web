@@ -161,8 +161,11 @@
             });
             videoElement.srcObject = stream;
 
+            // Asegúrate de que la librería se cargue correctamente
+            console.log(mp_hands);  // Verifica si la librería 'hands' está disponible
+
             // Inicializar MediaPipe después de que la cámara esté configurada
-            hands = new Hands({
+            hands = new mp_hands.Hands({
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
             });
             hands.setOptions({
