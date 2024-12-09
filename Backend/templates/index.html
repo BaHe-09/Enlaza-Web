@@ -219,7 +219,7 @@
 
         // Función para procesar las coordenadas de las manos
         async function processHandLandmarks(image) {
-            const results = await hands.process(image);
+            const results = await hands.process(image);  // Usar 'hands.process()' correctamente
             return results;
         }
 
