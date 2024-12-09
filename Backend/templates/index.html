@@ -148,14 +148,24 @@
     </footer>
 
     <script>
-        // Acceder a la cámara
-        const videoElement = document.getElementById("video");
+        let hands;  // Definir la variable global para MediaPipe
 
         async function setupCamera() {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "user" }
+                video: { facingMode: "user" }  // Usar la cámara frontal
             });
             videoElement.srcObject = stream;
+
+            // Inicializar MediaPipe después de que la cámara esté configurada
+            const mp_hands = await import('https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1620500131/mediapipe/hands.js');  // Cargar MediaPipe dinámicamente
+            hands = new mp_hands.Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1620500131/${file}`
+            });
+            hands.setOptions({
+                maxNumHands: 1,
+                minDetectionConfidence: 0.7,
+                minTrackingConfidence: 0.5
+            });
         }
 
         async function detectHands() {
@@ -172,29 +182,30 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Error en la predicción');
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Error en la predicción');
                 }
 
                 const data = await response.json();
                 displayPrediction(data.prediction);  // Mostrar la predicción
             } catch (error) {
                 console.error('Error:', error);
-                displayPrediction('Error en la predicción');
+                displayPrediction(`Error: ${error.message}`);
             }
         }
 
-        function captureFrame(frame) {
-            const image = frame; // Tomar el frame directamente del video
+        async function captureFrame(frame) {
+            const image = frame;  // Tomar el frame directamente del video
             const keypoints = [];
 
             // Usar MediaPipe para detectar las manos
-            const results = processHandLandmarks(image);
+            const results = await processHandLandmarks(image);
 
             if (results.multiHandLandmarks) {
                 // Extraer los puntos de cada mano detectada
                 results.multiHandLandmarks.forEach(handLandmarks => {
                     handLandmarks.landmark.forEach(lm => {
-                        keypoints.push(lm.x, lm.y, lm.z); // Guardar las coordenadas x, y, z
+                        keypoints.push(lm.x, lm.y, lm.z);  // Guardar las coordenadas x, y, z
                     });
                 });
             }
@@ -214,7 +225,7 @@
         }
 
         window.onload = () => {
-            setupCamera();
+            setupCamera();  // Configurar la cámara
             setInterval(detectHands, 100);  // Detectar manos cada 100 ms
         };
     </script>
