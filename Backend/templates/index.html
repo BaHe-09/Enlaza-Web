@@ -148,7 +148,7 @@
     </footer>
 
     <!-- Cargar las librerías de MediaPipe -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1620500170"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
 
     <script>
@@ -177,7 +177,7 @@
             // Usar la clase `Hands` del objeto `MediaPipe` cargado
             if (window.MediaPipe && window.MediaPipe.Hands) {
                 hands = new window.MediaPipe.Hands({
-                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1620500170/${file}`
                 });
 
                 hands.setOptions({
@@ -269,4 +269,3 @@
     </script>
 </body>
 </html>
-
