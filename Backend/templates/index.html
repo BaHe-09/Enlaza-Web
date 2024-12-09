@@ -155,24 +155,39 @@
         let videoElement = document.getElementById("video");  // Definir correctamente la referencia al video
         let hands;  // Definir la variable global para MediaPipe
 
+        // Asegurarnos de que la librería se carga correctamente antes de usarla
+        window.onload = async () => {
+            // Espera a que los scripts se carguen correctamente
+            await setupCamera();  // Configurar la cámara
+
+            // Detectar las manos cada 100ms
+            setInterval(detectHands, 100);
+        }
+
         async function setupCamera() {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: "user" }  // Usar la cámara frontal
             });
             videoElement.srcObject = stream;
 
-            // Asegúrate de que la librería se cargue correctamente
-            console.log(mp_hands);  // Verifica si la librería 'hands' está disponible
-
             // Inicializar MediaPipe después de que la cámara esté configurada
-            hands = new mp_hands.Hands({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-            });
-            hands.setOptions({
-                maxNumHands: 1,
-                minDetectionConfidence: 0.7,
-                minTrackingConfidence: 0.5
-            });
+            console.log("Cargando la librería de manos...");
+            const mp_hands = window.Hands;  // Referencia a la clase Hands del script cargado
+            console.log(mp_hands);  // Verificar si la librería está cargada
+
+            // Verificar si hands está definido
+            if (mp_hands) {
+                hands = new mp_hands.Hands({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+                });
+                hands.setOptions({
+                    maxNumHands: 1,
+                    minDetectionConfidence: 0.7,
+                    minTrackingConfidence: 0.5
+                });
+            } else {
+                console.error('No se pudo cargar la librería de MediaPipe.');
+            }
         }
 
         async function detectHands() {
@@ -222,19 +237,19 @@
 
         // Función para procesar las coordenadas de las manos
         async function processHandLandmarks(image) {
-            const results = await hands.process(image);  // Usar 'hands.process()' correctamente
-            return results;
+            if (hands) {
+                const results = await hands.process(image);  // Usar 'hands.process()' correctamente
+                return results;
+            } else {
+                console.error('El objeto "hands" no está definido correctamente.');
+                return {};
+            }
         }
 
         function displayPrediction(prediction) {
             const predictionText = document.getElementById("predictionText");
             predictionText.innerText = `Predicción: ${prediction}`;
         }
-
-        window.onload = () => {
-            setupCamera();  // Configurar la cámara
-            setInterval(detectHands, 100);  // Detectar manos cada 100 ms
-        };
     </script>
 </body>
 </html>
