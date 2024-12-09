@@ -158,9 +158,9 @@
             videoElement.srcObject = stream;
 
             // Inicializar MediaPipe después de que la cámara esté configurada
-            const mp_hands = await import('https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1620500131/mediapipe/hands.js');  // Cargar MediaPipe dinámicamente
+            const mp_hands = await import('https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1620500170/mediapipe/hands.js');  // Cargar MediaPipe dinámicamente
             hands = new mp_hands.Hands({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1620500131/${file}`
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1620500170/${file}`
             });
             hands.setOptions({
                 maxNumHands: 1,
