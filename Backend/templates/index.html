@@ -219,6 +219,12 @@
                 });
             }
 
+            // Verificar que las coordenadas tengan una longitud de 63
+            if (keypoints.length !== 63) {
+                console.error('Las coordenadas deben tener una longitud de 63.');
+                return [];
+            }
+
             return keypoints;  // Retornar las coordenadas detectadas
         }
 
