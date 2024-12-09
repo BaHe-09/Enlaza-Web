@@ -155,11 +155,24 @@
         let videoElement = document.getElementById("video");  // Definir correctamente la referencia al video
         let hands;  // Definir la variable global para MediaPipe
 
+        // Función para verificar que la librería MediaPipe se haya cargado correctamente
+        function checkMediaPipe() {
+            if (typeof window.MediaPipe === 'undefined') {
+                console.error('MediaPipe no está definido.');
+            } else {
+                console.log('MediaPipe cargado correctamente');
+            }
+        }
+
+        // Inicialización de la cámara y configuración de MediaPipe
         async function setupCamera() {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: "user" }  // Usar la cámara frontal
             });
             videoElement.srcObject = stream;
+
+            // Verificar si la librería de MediaPipe está cargada
+            checkMediaPipe();
 
             // Usar la clase `Hands` del objeto `MediaPipe` cargado
             if (window.MediaPipe && window.MediaPipe.Hands) {
@@ -172,6 +185,7 @@
                     minDetectionConfidence: 0.7,
                     minTrackingConfidence: 0.5
                 });
+                console.log("Hands object initialized successfully.");
             } else {
                 console.error('MediaPipe Hands no está disponible.');
             }
@@ -181,25 +195,29 @@
             const frame = videoElement;
             const keypoints = await captureFrame(frame);
 
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ keypoints: keypoints })
-                });
+            if (keypoints.length === 63) {
+                try {
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ keypoints: keypoints })
+                    });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Error en la predicción');
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Error en la predicción');
+                    }
+
+                    const data = await response.json();
+                    displayPrediction(data.prediction);  // Mostrar la predicción
+                } catch (error) {
+                    console.error('Error:', error);
+                    displayPrediction(`Error: ${error.message}`);
                 }
-
-                const data = await response.json();
-                displayPrediction(data.prediction);  // Mostrar la predicción
-            } catch (error) {
-                console.error('Error:', error);
-                displayPrediction(`Error: ${error.message}`);
+            } else {
+                console.error('Las coordenadas deben tener una longitud de 63.');
             }
         }
 
