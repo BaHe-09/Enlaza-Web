@@ -98,19 +98,24 @@ def video():
 def predict():
     data = request.json  # Recibir los datos en formato JSON
     
-    # Obtener las coordenadas de las manos
+    # Verificar que se reciban las coordenadas
+    if 'keypoints' not in data:
+        return jsonify({'error': 'No se encontraron coordenadas de las manos en la solicitud'}), 400
+
     keypoints = np.array(data['keypoints']).reshape(1, -1)
 
-    # Verificar si las coordenadas tienen la forma esperada (63 valores para 21 puntos con 3 coordenadas cada uno)
+    # Verificar que las coordenadas tengan el tamaño correcto
     if keypoints.shape[1] != 63:
         return jsonify({'error': 'Las coordenadas deben tener una longitud de 63.'}), 400
 
     # Realizar la predicción
-    prediction = model.predict(keypoints, verbose=0)
-    class_index = np.argmax(prediction)  # Obtener la clase con mayor probabilidad
-    class_label = class_names[class_index]  # Obtener la etiqueta correspondiente
-
-    return jsonify({'prediction': class_label})  # Devolver la predicción en formato JSON
+    try:
+        prediction = model.predict(keypoints, verbose=0)
+        class_index = np.argmax(prediction)  # Obtener la clase con mayor probabilidad
+        class_label = class_names[class_index]  # Obtener la etiqueta correspondiente
+        return jsonify({'prediction': class_label})  # Devolver la predicción
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
