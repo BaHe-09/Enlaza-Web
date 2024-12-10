@@ -9,14 +9,13 @@ import os
 app = Flask(__name__)
 
 # Cargar el modelo previamente entrenado
-model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5')  # Ruta al archivo .h5
+model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5')
 model = load_model(model_path)
 
 # Inicializar MediaPipe para la detección de manos
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7)
 
-# Mapeo de las clases del modelo (ajusta según las clases de tu modelo)
 class_names = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "a", "e", "i", "u", "o", "b", "c", "d", "f", "g", "h", 
                "l", "m", "n", "p", "r", "s", "t", "v", "w", "y", "k", "q", "x", "z", "te amo", "mucho", "yo"]
 
@@ -59,7 +58,7 @@ def process_image(image):
             return keypoints
     return None
 
+# Asegurarse de usar el puerto de Render
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)  # Ejecutar Flask
-
-
+    port = os.environ.get("PORT", 5000)  # Obtener el puerto de Render (por defecto 5000)
+    app.run(debug=True, host='0.0.0.0', port=port)  # Ejecutar Flask con el puerto proporcionado
