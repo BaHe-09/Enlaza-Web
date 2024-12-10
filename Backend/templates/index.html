@@ -120,7 +120,7 @@
     <!-- Header -->
     <header>
         <div class="logo-container">
-            <img src="static/enlaza.jpg" alt="Logo" class="logo">
+            <img src="{{ url_for('static', filename='enlaza.jpg') }}" alt="Logo" class="logo">
             <div class="logo-text">Enlaza</div>
         </div>
         <nav>
@@ -148,11 +148,11 @@
     </footer>
 
     <!-- Cargar las librerías de MediaPipe localmente -->
-    <script src="static/js/hands_solution_packed_assets_loader.js"></script>
-    <script src="static/js/hands_solution_simd_wasm_bin.js"></script>
-    <script src="static/js/hands_solution_simd_wasm_bin.wasm"></script>
-    <script src="static/js/hands.js"></script>
-    <script src="static/js/camera_utils.js"></script>
+    <script src="{{ url_for('static', filename='js/hands_solution_packed_assets_loader.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/hands_solution_simd_wasm_bin.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/hands_solution_simd_wasm_bin.wasm') }}"></script>
+    <script src="{{ url_for('static', filename='js/hands.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/camera_utils.js') }}"></script>
 
     <script>
         let videoElement = document.getElementById("video");  // Definir correctamente la referencia al video
