@@ -5,10 +5,6 @@ import numpy as np
 from tensorflow.keras.models import load_model
 import mediapipe as mp
 import os
-from flask_cors import CORS
-
-# Permitir CORS para todas las rutas
-CORS(app)
 
 app = Flask(__name__)
 
