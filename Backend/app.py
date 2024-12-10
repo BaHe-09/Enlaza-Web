@@ -7,8 +7,8 @@ import cv2
 # Inicializa la app de Flask
 app = Flask(__name__)
 
-# Cargar el modelo (asegúrate de tener el modelo correcto y la ruta configurada)
-model_path = 'Backend/modelo.h5'  # Ruta correcta al archivo .h5 en tu proyecto
+# Ruta al modelo (asegúrate de tener el modelo correcto y la ruta configurada)
+model_path = 'Backend/modelo.h5'  # Ruta al archivo .h5
 model = load_model(model_path)
 
 # Inicializar MediaPipe para la detección de manos
@@ -56,4 +56,5 @@ def process_image(image):
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
 
