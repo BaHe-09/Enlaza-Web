@@ -3,134 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proyecto de Traducción LSM</title>
+    <title>Detección de Señales LSM</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f4f4;
-        }
-
-        header {
-            background-color: #333;
-            padding: 20px;
-            color: #fff;
-            text-align: center;
-        }
-
-        .video-container {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        #video {
-            width: 80%;
-            max-width: 640px;
-            border: 2px solid #000;
-        }
-
-        .prediction-text {
-            text-align: center;
-            font-size: 24px;
-            margin-top: 20px;
-        }
+        body { font-family: Arial, sans-serif; }
+        video { width: 100%; height: auto; border: 1px solid #ccc; }
+        #prediction { margin-top: 20px; font-size: 1.5rem; }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Proyecto de Traducción LSM</h1>
-    </header>
-
-    <section class="video-container">
-        <video id="video" autoplay></video>
-    </section>
-
-    <section class="prediction-text" id="predictionText">
-        Predicción: Esperando...
-    </section>
-
-    <!-- Cargar las librerías de MediaPipe desde archivos locales -->
-    <script src="/static/mediapipe/hands.js"></script>
-    <script src="/static/mediapipe/camera_utils.js"></script>
+    <h1>Detección en Tiempo Real de Lengua de Señas Mexicana</h1>
+    <video id="video" autoplay></video>
+    <div id="prediction">Predicción: Esperando...</div>
 
     <script>
-        let videoElement = document.getElementById("video");
+        const videoElement = document.getElementById('video');
+        const predictionElement = document.getElementById('prediction');
+        let videoStream;
 
         // Configuración de la cámara
         async function setupCamera() {
-            try {
-                // Verificar si MediaPipe está correctamente cargado
-                if (typeof window.MediaPipe === 'undefined' || typeof window.MediaPipe.Camera === 'undefined') {
-                    console.error('MediaPipe o Camera no está disponible.');
-                    return;
-                }
-
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user' }
-                });
-
-                videoElement.srcObject = stream;  // Conectar el flujo de video a la etiqueta <video>
-
-                // Inicializa la cámara de MediaPipe
-                const camera = new window.MediaPipe.Camera(videoElement, {
-                    onFrame: async () => {
-                        const results = await detectHands(videoElement);
-                        if (results) {
-                            sendToBackend(results);  // Enviar las coordenadas al backend
-                        }
-                    },
-                    width: 640,
-                    height: 480
-                });
-
-                camera.start();  // Iniciar la cámara de MediaPipe
-            } catch (error) {
-                console.error("Error al acceder a la cámara: ", error);
-            }
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoElement.srcObject = stream;
+            videoStream = stream;
         }
 
-        // Detectar las manos
-        async function detectHands(videoElement) {
-            const image = videoElement;
-            const keypoints = await processHandLandmarks(image);
-            return keypoints;
-        }
+        // Enviar el frame a Flask para la predicción
+        async function sendFrame() {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
-        // Procesar los puntos de referencia de las manos
-        async function processHandLandmarks(image) {
-            const results = await hands.send({image});
-            if (results.multiHandLandmarks) {
-                const keypoints = [];
-                results.multiHandLandmarks.forEach(handLandmarks => {
-                    handLandmarks.landmark.forEach(lm => {
-                        keypoints.push(lm.x, lm.y, lm.z);
-                    });
-                });
-                return keypoints;
-            }
-            return null;
-        }
+            const imageData = canvas.toDataURL('image/jpeg'); // Convertir a base64
 
-        // Enviar las coordenadas al backend
-        async function sendToBackend(keypoints) {
-            if (!keypoints) return;
-
-            const response = await fetch('https://enlaza-web.onrender.com/predict', {  // Usar la URL de Render
+            const response = await fetch('/predict', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ keypoints: keypoints })  // Enviar las coordenadas al backend
+                body: JSON.stringify({ image: imageData })
             });
 
-            const data = await response.json();  // Obtener la respuesta en formato JSON
-            document.getElementById("predictionText").innerText = `Predicción: ${data.prediction}`;  // Mostrar la predicción
+            const data = await response.json();
+            predictionElement.innerText = 'Predicción: ' + data.prediction;
         }
 
-        window.onload = () => {
-            setupCamera();  // Llamar la función de inicialización de la cámara cuando la página cargue
+        // Iniciar la cámara y predicción en intervalos
+        async function start() {
+            await setupCamera();
+            setInterval(sendFrame, 5000); // Enviar un frame por segundo
         }
+
+        start();
     </script>
 </body>
 </html>
