@@ -1,12 +1,11 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
 import numpy as np
 from tensorflow.keras.models import load_model
 import mediapipe as mp
 import cv2
-import os
 
 # Inicializa la app de Flask
-app = Flask(__name__, static_folder='static', template_folder='templates')
+app = Flask(__name__)
 
 # Ruta al modelo (asegúrate de tener el modelo correcto y la ruta configurada)
 model_path = 'Backend/modelo.h5'  # Ruta al archivo .h5
@@ -22,7 +21,7 @@ class_names = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "a", "e", "i", "u", 
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return 'API de Detección de Señales de LSM funcionando'
 
 @app.route('/predict', methods=['POST'])
 def predict():
