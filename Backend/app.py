@@ -27,13 +27,13 @@ def home():
 def predict():
     data = request.get_json()  # Obtener las coordenadas de las manos
     keypoints = np.array(data['keypoints']).reshape(1, -1)  # Convertir las coordenadas en un array numpy
-    prediction = model.predict(keypoints)  # Hacer la predicción
+    prediction = model.predict(keypoints)  # Hacer la predicción utilizando el modelo cargado
 
-    # Obtener la clase más probable
+    # Obtener la clase más probable (la predicción)
     class_index = np.argmax(prediction)
-    predicted_class = class_names[class_index]
+    predicted_class = class_names[class_index]  # Obtener el nombre de la clase predicha
 
-    # Devolver la predicción
+    # Devolver la predicción como respuesta en formato JSON
     return jsonify({'prediction': predicted_class})
 
 # Función para procesar la imagen y obtener las coordenadas de las manos
@@ -54,4 +54,5 @@ def process_image(image):
     return None  # Si no se detecta ninguna mano
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)  # Configurado para Render y localhost
+
