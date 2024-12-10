@@ -8,7 +8,7 @@ import mediapipe as mp
 app = Flask(__name__)
 
 # Cargar el modelo previamente entrenado
-model_path = 'Backend/modelo.h5'  # Ruta al archivo .h5
+model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5')  # Ruta al archivo .h5
 model = load_model(model_path)
 
 # Inicializar MediaPipe para la detección de manos
