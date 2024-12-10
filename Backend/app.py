@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import numpy as np
 from tensorflow.keras.models import load_model
 import mediapipe as mp
@@ -21,12 +21,11 @@ class_names = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "a", "e", "i", "u", 
 
 @app.route('/')
 def home():
-    return 'API de Detección de Señales de LSM funcionando'
+    return render_template('index.html')  # Servir el archivo index.html
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    # Obtener los datos del cuerpo de la solicitud
-    data = request.get_json()
+    data = request.get_json()  # Obtener las coordenadas de las manos
     keypoints = np.array(data['keypoints']).reshape(1, -1)  # Convertir las coordenadas en un array numpy
     prediction = model.predict(keypoints)  # Hacer la predicción
 
@@ -56,5 +55,3 @@ def process_image(image):
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-
-
