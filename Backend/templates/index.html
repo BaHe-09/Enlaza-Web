@@ -1,60 +1,101 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detección de Señales LSM</title>
+    <title>Predicción LSM</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        video { width: 100%; height: auto; border: 1px solid #ccc; }
-        #prediction { margin-top: 20px; font-size: 1.5rem; }
+        /* Estilos generales */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        #video {
+            width: 400px; /* Video más pequeño */
+            height: 300px; /* Video más pequeño */
+            border: 2px solid #000;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #predictionText {
+            font-size: 18px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1>Detección en Tiempo Real de Lengua de Señas Mexicana</h1>
-    <video id="video" autoplay></video>
-    <div id="prediction">Predicción: Esperando...</div>
+    <video id="video" autoplay></video> <!-- Video centralizado y más pequeño -->
+    <button id="captureButton">Capturar y predecir</button> <!-- Botón para capturar frame -->
+    <div id="predictionText">Predicción: </div>
 
     <script>
-        const videoElement = document.getElementById('video');
-        const predictionElement = document.getElementById('prediction');
+        const videoElement = document.getElementById("video");
+        const captureButton = document.getElementById("captureButton");
+        const predictionText = document.getElementById("predictionText");
+        let stream;
         let videoStream;
 
-        // Configuración de la cámara
         async function setupCamera() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            videoElement.srcObject = stream;
-            videoStream = stream;
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "user" }
+                });
+                videoElement.srcObject = videoStream;
+            } catch (error) {
+                console.error("Error al acceder a la cámara:", error);
+            }
         }
 
-        // Enviar el frame a Flask para la predicción
-        async function sendFrame() {
-            const canvas = document.createElement('canvas');
+        async function captureFrame() {
+            // Capturar el frame del video
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
             canvas.width = videoElement.videoWidth;
             canvas.height = videoElement.videoHeight;
-            const context = canvas.getContext('2d');
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            const frame = canvas.toDataURL("image/jpeg");
 
-            const imageData = canvas.toDataURL('image/jpeg'); // Convertir a base64
-
-            const response = await fetch('/predict', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: imageData })
-            });
-
-            const data = await response.json();
-            predictionElement.innerText = 'Predicción: ' + data.prediction;
+            // Enviar el frame al servidor para la predicción
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image: frame })
+                });
+                const data = await response.json();
+                predictionText.innerText = `Predicción: ${data.prediction}`;
+            } catch (error) {
+                console.error("Error al enviar el frame:", error);
+            }
         }
 
-        // Iniciar la cámara y predicción en intervalos
-        async function start() {
-            await setupCamera();
-            setInterval(sendFrame, 5000); // Enviar un frame por segundo
-        }
+        captureButton.addEventListener('click', captureFrame); // Capturar y predecir cuando se hace clic
 
-        start();
+        window.onload = setupCamera;  // Configurar la cámara cuando se carga la página
     </script>
 </body>
 </html>
-
