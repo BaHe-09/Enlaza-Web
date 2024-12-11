@@ -8,8 +8,8 @@ import os
 
 app = Flask(__name__)
 
-# Cargar el modelo previamente entrenado
-model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5')
+# Ruta al modelo (en la carpeta Backend). Usamos os.path.join para una ruta más confiable
+model_path = os.path.join(os.getcwd(), 'Backend', 'modelo.h5')  # Ruta del modelo en la carpeta Backend
 model = load_model(model_path)
 
 # Inicializar MediaPipe para la detección de manos
@@ -25,7 +25,7 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.get_json()
+    data = request.get_json()  # Obtener las coordenadas de las manos
     image_data = data['image']
     image = decode_image(image_data)
     keypoints = process_image(image)
